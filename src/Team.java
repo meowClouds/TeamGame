@@ -25,8 +25,9 @@ public class Team extends Person implements Formattable {
                 .reduce((a, b) -> a + ";" + b)
                 .orElse("");
 
+        // Use getId() instead of teamId field
         return String.format("%s,%d,%.2f,%.1f,\"%s\"",
-                id, getTeamSize(), getAverageSkill(), getBalanceScore(), memberString);
+                getId(), getTeamSize(), getAverageSkill(), getBalanceScore(), memberString);
     }
 
     @Override
@@ -37,7 +38,7 @@ public class Team extends Person implements Formattable {
     @Override
     public Map<String, Object> toMap() {
         Map<String, Object> map = new HashMap<>();
-        map.put("teamId", id);
+        map.put("teamId", getId());  // Use getId() instead of id field
         map.put("teamSize", getTeamSize());
         map.put("averageSkill", getAverageSkill());
         map.put("balanceScore", getBalanceScore());
@@ -48,8 +49,9 @@ public class Team extends Person implements Formattable {
 
     @Override
     public String getDisplayInfo() {
+        // Use getId() instead of teamId field
         return String.format("Team %s: %d members, Avg Skill: %.1f, Balance: %.1f%%",
-                id, getTeamSize(), getAverageSkill(), getBalanceScore());
+                getId(), getTeamSize(), getAverageSkill(), getBalanceScore());
     }
 
     // Rest of the Team class methods remain the same...
@@ -116,7 +118,9 @@ public class Team extends Person implements Formattable {
         return issues;
     }
 
-    // Getters
+    // Getters - Fixed the missing return type and use getId()
+    public String getTeamId() { return getId(); }  // Use getId() instead of teamId field
+
     public List<Participant> getMembers() { return new ArrayList<>(members); }
     public Map<String, Integer> getGameDistribution() { return new HashMap<>(gameDistribution); }
     public Map<Role, Integer> getRoleDistribution() { return new HashMap<>(roleDistribution); }
@@ -126,7 +130,8 @@ public class Team extends Person implements Formattable {
 
     public String getDetailedInfo() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Team ").append(id).append(":\n");
+        // Use getId() instead of id field
+        sb.append("Team ").append(getId()).append(":\n");
         sb.append("  Members: ").append(members.size()).append("\n");
         sb.append("  Average Skill: ").append(String.format("%.2f", getAverageSkill())).append("\n");
         sb.append("  Balance Score: ").append(String.format("%.1f", getBalanceScore())).append("\n");
