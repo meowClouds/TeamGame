@@ -23,9 +23,6 @@ public enum Role {
         }
     }
 
-    public String getDisplayName() {
-        return displayName;
-    }
 
     @Override
     public String toString() {

@@ -1,4 +1,3 @@
-// 6. SurveyManager.java
 import java.util.*;
 
 public class SurveyManager {
@@ -26,8 +25,8 @@ public class SurveyManager {
                     String input = scanner.nextLine().trim();
                     int rating = Integer.parseInt(input);
 
-                    if (rating < 1 || rating > 5) {
-                        System.out.println("Please enter a number between 1 and 5.");
+                    if (rating <= 1 || rating > 5) {
+                        System.out.println("Please enter a number between 1 and 5, excluding 1");
                         continue;
                     }
 

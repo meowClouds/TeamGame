@@ -138,9 +138,9 @@ public class CSVDataHandler {
     private int validatePersonalityScore(String scoreStr, int lineNumber) throws InvalidDataException {
         try {
             int score = Integer.parseInt(scoreStr.trim());
-            if (score < 5 || score > 25) {
+            if (score < 0 || score > 100) {
                 throw new InvalidDataException(
-                        String.format("Personality score must be between 5-25 at line %d", lineNumber)
+                        String.format("Personality score must be between 0-100 at line %d", lineNumber)
                 );
             }
             return score;
@@ -148,6 +148,49 @@ public class CSVDataHandler {
             throw new InvalidDataException(
                     String.format("Invalid personality score format at line %d: %s", lineNumber, scoreStr)
             );
+        }
+    }
+
+    /**
+     * Appends a new participant to the CSV file
+     */
+    public void appendParticipant(Participant participant, String filePath) throws DataSavingException {
+        if (participant == null) {
+            throw new DataSavingException("Participant cannot be null");
+        }
+
+        Path path = Paths.get(filePath);
+        boolean fileExists = Files.exists(path);
+
+        try (BufferedWriter writer = Files.newBufferedWriter(path,
+                java.nio.file.StandardOpenOption.CREATE,
+                java.nio.file.StandardOpenOption.APPEND)) {
+
+            // Write header if file doesn't exist or is empty
+            if (!fileExists || Files.size(path) == 0) {
+                writer.write("ID,Name,Email,PreferredGame,SkillLevel,PreferredRole,PersonalityScore,PersonalityType");
+                writer.newLine();
+            }
+
+            // Format participant data for CSV
+            String participantLine = String.format("%s,%s,%s,%s,%d,%s,%d,%s",
+                    participant.getId(),
+                    participant.getName(),
+                    participant.getEmail(),
+                    participant.getPreferredGame(),
+                    participant.getSkillLevel(),
+                    participant.getPreferredRole(),
+                    participant.getPersonalityScore(),
+                    participant.getPersonalityType());
+
+            writer.write(participantLine);
+            writer.newLine();
+
+            System.out.printf("Successfully appended participant %s to %s%n",
+                    participant.getName(), filePath);
+
+        } catch (IOException e) {
+            throw new DataSavingException("Error appending participant to file: " + e.getMessage(), e);
         }
     }
 
@@ -175,17 +218,4 @@ public class CSVDataHandler {
         }
     }
 
-    private String formatTeamForCSV(Team team) {
-        String members = team.getMembers().stream()
-                .map(p -> String.format("%s(%s)", p.getName(), p.getPreferredRole()))
-                .reduce((a, b) -> a + ";" + b)
-                .orElse("");
-
-        return String.format("%s,%d,%.2f,%.1f,\"%s\"",
-                team.getId(),
-                team.getTeamSize(),
-                team.getAverageSkill(),
-                team.getBalanceScore(),
-                members);
-    }
 }

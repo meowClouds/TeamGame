@@ -17,7 +17,7 @@ public class Team extends Person implements Formattable {
         this.personalityDistribution = new HashMap<>();
     }
 
-    // Implementing Formattable interface methods (Polymorphism)
+    // Implementing Formattable interface methods
     @Override
     public String toCSVFormat() {
         String memberString = members.stream()
@@ -54,7 +54,6 @@ public class Team extends Person implements Formattable {
                 getId(), getTeamSize(), getAverageSkill(), getBalanceScore());
     }
 
-    // Rest of the Team class methods remain the same...
     public boolean addMember(Participant participant) {
         if (members.contains(participant)) {
             return false;
@@ -118,8 +117,8 @@ public class Team extends Person implements Formattable {
         return issues;
     }
 
-    // Getters - Fixed the missing return type and use getId()
-    public String getTeamId() { return getId(); }  // Use getId() instead of teamId field
+    // Getters
+    public String getTeamId() { return getId(); }
 
     public List<Participant> getMembers() { return new ArrayList<>(members); }
     public Map<String, Integer> getGameDistribution() { return new HashMap<>(gameDistribution); }

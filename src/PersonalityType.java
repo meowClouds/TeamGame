@@ -14,18 +14,13 @@ public enum PersonalityType {
     }
 
     public static PersonalityType classifyFromScore(int score) {
-        int scaledScore = score * 4; // Scale 5-25 to 20-100
 
         for (PersonalityType type : values()) {
-            if (scaledScore >= type.minScore && scaledScore <= type.maxScore) {
+            if (score >= type.minScore && score <= type.maxScore) {
                 return type;
             }
         }
         throw new IllegalArgumentException("Invalid personality score: " + score);
-    }
-
-    public String getDisplayName() {
-        return displayName;
     }
 
     @Override

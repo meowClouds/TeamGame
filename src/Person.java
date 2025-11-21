@@ -7,14 +7,9 @@ public abstract class Person {
         this.name = name;
     }
 
-    // Template method pattern - abstract method to be implemented by subclasses
+    // Template method pattern
     public abstract String getDisplayInfo();
 
-    // Common functionality for all entities
-    public boolean isValid() {
-        return id != null && !id.trim().isEmpty() &&
-                name != null && !name.trim().isEmpty();
-    }
 
     // Getters
     public String getId() { return id; }

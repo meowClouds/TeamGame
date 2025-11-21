@@ -16,7 +16,7 @@ public class SurveyResponse {
             }
         }
 
-        this.totalScore = Arrays.stream(answers).sum();
+        this.totalScore = (Arrays.stream(answers).sum())*4;
     }
 
     public int getTotalScore() {

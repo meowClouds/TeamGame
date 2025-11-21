@@ -34,16 +34,7 @@ public class Participant extends Person {
         }
     }
 
-    // Business methods using polymorphism
-    public boolean isHighSkill() {
-        return skillLevel >= 8;
-    }
-
-    public boolean hasLeadershipPotential() {
-        return personalityType == PersonalityType.LEADER;
-    }
-
-    // Getters remain the same...
+    // Getters
     public String getEmail() { return email; }
     public String getPreferredGame() { return preferredGame; }
     public int getSkillLevel() { return skillLevel; }
