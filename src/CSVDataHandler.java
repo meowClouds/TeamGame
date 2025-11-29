@@ -1,6 +1,7 @@
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
+import java.util.concurrent.*;
 
 public class CSVDataHandler {
     private static final String[] EXPECTED_HEADERS = {
@@ -8,7 +9,26 @@ public class CSVDataHandler {
             "PreferredRole", "PersonalityScore", "PersonalityType"
     };
 
+    private final ExecutorService fileExecutor;
+
+    public CSVDataHandler() {
+        this.fileExecutor = Executors.newSingleThreadExecutor();
+    }
+
+    // Modified to use CompletableFuture for async loading
+    public CompletableFuture<List<Participant>> loadParticipantsAsync(String filePath) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return loadParticipants(filePath);
+            } catch (DataLoadingException e) {
+                throw new CompletionException(e);
+            }
+        }, fileExecutor);
+    }
+
+    // Existing loadParticipants method remains for sync operations
     public List<Participant> loadParticipants(String filePath) throws DataLoadingException {
+        // ... existing implementation unchanged
         if (filePath == null || filePath.trim().isEmpty()) {
             throw new DataLoadingException("File path cannot be null or empty");
         }
@@ -58,6 +78,55 @@ public class CSVDataHandler {
         }
 
         return participants;
+    }
+
+    // Async version of appendParticipant
+    public CompletableFuture<Void> appendParticipantAsync(Participant participant, String filePath) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                appendParticipant(participant, filePath);
+            } catch (DataSavingException e) {
+                throw new CompletionException(e);
+            }
+        }, fileExecutor);
+    }
+
+    public void appendParticipant(Participant participant, String filePath) throws DataSavingException {
+        if (participant == null) {
+            throw new DataSavingException("Participant cannot be null");
+        }
+
+        Path path = Paths.get(filePath);
+        boolean fileExists = Files.exists(path);
+
+        try (BufferedWriter writer = Files.newBufferedWriter(path,
+                StandardOpenOption.CREATE,
+                StandardOpenOption.APPEND)) {
+
+            if (!fileExists || Files.size(path) == 0) {
+                writer.write("ID,Name,Email,PreferredGame,SkillLevel,PreferredRole,PersonalityScore,PersonalityType");
+                writer.newLine();
+            }
+
+            String participantLine = String.format("%s,%s,%s,%s,%d,%s,%d,%s",
+                    participant.getId(),
+                    participant.getName(),
+                    participant.getEmail(),
+                    participant.getPreferredGame(),
+                    participant.getSkillLevel(),
+                    participant.getPreferredRole(),
+                    participant.getPersonalityScore(),
+                    participant.getPersonalityType());
+
+            writer.write(participantLine);
+            writer.newLine();
+
+            System.out.printf("Successfully appended participant %s to %s%n",
+                    participant.getName(), filePath);
+
+        } catch (IOException e) {
+            throw new DataSavingException("Error appending participant to file: " + e.getMessage(), e);
+        }
     }
 
     private void validateHeader(String headerLine) throws DataLoadingException {
@@ -151,49 +220,6 @@ public class CSVDataHandler {
         }
     }
 
-    /**
-     * Appends a new participant to the CSV file
-     */
-    public void appendParticipant(Participant participant, String filePath) throws DataSavingException {
-        if (participant == null) {
-            throw new DataSavingException("Participant cannot be null");
-        }
-
-        Path path = Paths.get(filePath);
-        boolean fileExists = Files.exists(path);
-
-        try (BufferedWriter writer = Files.newBufferedWriter(path,
-                java.nio.file.StandardOpenOption.CREATE,
-                java.nio.file.StandardOpenOption.APPEND)) {
-
-            // Write header if file doesn't exist or is empty
-            if (!fileExists || Files.size(path) == 0) {
-                writer.write("ID,Name,Email,PreferredGame,SkillLevel,PreferredRole,PersonalityScore,PersonalityType");
-                writer.newLine();
-            }
-
-            // Format participant data for CSV
-            String participantLine = String.format("%s,%s,%s,%s,%d,%s,%d,%s",
-                    participant.getId(),
-                    participant.getName(),
-                    participant.getEmail(),
-                    participant.getPreferredGame(),
-                    participant.getSkillLevel(),
-                    participant.getPreferredRole(),
-                    participant.getPersonalityScore(),
-                    participant.getPersonalityType());
-
-            writer.write(participantLine);
-            writer.newLine();
-
-            System.out.printf("Successfully appended participant %s to %s%n",
-                    participant.getName(), filePath);
-
-        } catch (IOException e) {
-            throw new DataSavingException("Error appending participant to file: " + e.getMessage(), e);
-        }
-    }
-
     public void saveTeams(List<Team> teams, String filePath) throws DataSavingException {
         if (teams == null || teams.isEmpty()) {
             throw new DataSavingException("No teams to save");
@@ -205,9 +231,8 @@ public class CSVDataHandler {
             writer.write("TeamID,MemberCount,AverageSkill,BalanceScore,Members");
             writer.newLine();
 
-            // Using polymorphism - Team implements Formattable
             for (Team team : teams) {
-                writer.write(team.toCSVFormat());  // Polymorphic call
+                writer.write(team.toCSVFormat());
                 writer.newLine();
             }
 
@@ -218,4 +243,7 @@ public class CSVDataHandler {
         }
     }
 
+    public void shutdown() {
+        fileExecutor.shutdown();
+    }
 }

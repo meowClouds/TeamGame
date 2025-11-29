@@ -1,9 +1,10 @@
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.stream.*;
 
 public class BalancedTeamStrategy implements TeamFormationStrategy {
     private static final int MAX_ATTEMPTS = 100;
+    private static final int PARALLEL_THRESHOLD = 20;
 
     @Override
     public List<Team> formTeams(List<Participant> participants, int teamSize) {
@@ -24,8 +25,26 @@ public class BalancedTeamStrategy implements TeamFormationStrategy {
                 attemptFormation(new ArrayList<>(participants), teamSize);
     }
 
+    // New parallel implementation
+    public List<Team> formTeamsParallel(List<Participant> participants, int teamSize) {
+        System.out.println("Using parallel team formation with " +
+                Runtime.getRuntime().availableProcessors() + " processors");
+
+        return IntStream.range(0, MAX_ATTEMPTS)
+                .parallel()
+                .mapToObj(attempt -> {
+                    List<Team> teams = attemptFormation(new ArrayList<>(participants), teamSize);
+                    double score = calculateOverallBalanceScore(teams);
+                    return new TeamAttempt(teams, score);
+                })
+                .max(Comparator.comparingDouble(TeamAttempt::getScore))
+                .map(TeamAttempt::getTeams)
+                .orElse(attemptFormation(new ArrayList<>(participants), teamSize));
+    }
+
     private List<Team> attemptFormation(List<Participant> participants, int teamSize) {
-        Collections.shuffle(participants);
+        // Use thread-safe shuffling
+        Collections.shuffle(participants, ThreadLocalRandom.current());
 
         List<Team> teams = new ArrayList<>();
         int teamCount = (int) Math.ceil((double) participants.size() / teamSize);
@@ -59,7 +78,7 @@ public class BalancedTeamStrategy implements TeamFormationStrategy {
     }
 
     private double calculateOverallBalanceScore(List<Team> teams) {
-        return teams.stream()
+        return teams.parallelStream()
                 .mapToDouble(Team::getBalanceScore)
                 .average()
                 .orElse(0.0);
@@ -73,5 +92,19 @@ public class BalancedTeamStrategy implements TeamFormationStrategy {
     @Override
     public String getStrategyDescription() {
         return "Forms teams with balanced distribution of games, roles, and personality types";
+    }
+
+    // Helper class for parallel processing
+    private static class TeamAttempt {
+        private final List<Team> teams;
+        private final double score;
+
+        public TeamAttempt(List<Team> teams, double score) {
+            this.teams = teams;
+            this.score = score;
+        }
+
+        public List<Team> getTeams() { return teams; }
+        public double getScore() { return score; }
     }
 }
